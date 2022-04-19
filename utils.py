@@ -2,9 +2,11 @@ import re
 import csv
 import glob
 import numpy as np
+from columnar import columnar
 import matplotlib.pyplot as plt
-from string import punctuation
 from nltk.corpus import stopwords
+
+from globals import PUNCTUATION
 
 
 def read_data_from_file(filename):
@@ -33,9 +35,13 @@ def get_data_from_files(path_to_files):
 
 
 def preprocess_texts(texts, remove_stopwords=False):
+    # TODO: Consider using lemmatization here?
+    # TODO: Perhaps identify and remove URLs beforehand? But they might aid in identifying spam... Replace URLs with
+    #     some keyword like URL?
+    #     Can also make it so that it identifies the URL of the video itself (for timestamp) versus URL of other video
     preprocessed_texts = []
     for text in texts:
-        text = ''.join([c for c in text if c not in punctuation])
+        text = ''.join([c for c in text if c not in PUNCTUATION])
         text = re.sub('\\s+', ' ', text)
         text = text.lower()
         if remove_stopwords:
@@ -68,3 +74,13 @@ def draw_histogram_word_counts(comments, num_bins=10):
     plt.xticks(np.arange(min_word_count, max_word_count, num_bins))
     plt.xlim([min_word_count, 120])
     plt.show()
+
+
+def print_incorrect_predictions(comments, y_test, predictions):
+    header = ['True', 'Predicted', 'Comment']
+    print_data = []
+    for index in range(len(predictions)):
+        if y_test[index] != predictions[index]:
+            print_data.append([y_test[index], predictions[index], comments[index]])
+    table = columnar(print_data, header)
+    print(table)
