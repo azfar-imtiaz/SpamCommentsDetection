@@ -1,5 +1,5 @@
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestClassifier
 
@@ -15,12 +15,12 @@ if __name__ == '__main__':
 
     comments = preprocess_texts(comments)
     get_class_count(classes)
-    draw_histogram_word_counts(comments)
+    # draw_histogram_word_counts(comments)
 
     X_train, X_test, y_train, y_test = train_test_split(comments, classes, test_size=0.2)
 
     # TODO: Create sklearn pipeline here
-    vectorizer = CountVectorizer(ngram_range=(1, 3))
+    vectorizer = TfidfVectorizer(ngram_range=(1, 3))
     X_train_vectors = vectorizer.fit_transform(X_train)
 
     clf = RandomForestClassifier(n_estimators=200)
@@ -32,4 +32,4 @@ if __name__ == '__main__':
     print(classification_report(y_test, predictions))
     print_incorrect_predictions(X_test, y_test, predictions)
 
-    # TODO: Get word feature importances. The word 'subscribe' should have a very high value...
+    get_feature_importances(vectorizer=vectorizer, model=clf)

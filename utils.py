@@ -84,3 +84,20 @@ def print_incorrect_predictions(comments, y_test, predictions):
             print_data.append([y_test[index], predictions[index], comments[index]])
     table = columnar(print_data, header)
     print(table)
+
+
+def get_feature_importances(vectorizer, model):
+    """
+        We get feature importances here from the vectorizer and model.
+        We observed better features using Tfidf instead of Count Vectorizer.
+        The word 'subscribe' has the highest feature importance score, as we'd predicted.
+
+    :param vectorizer: This is a text vectorizer
+    :param model: This can be any model that has the feature_importances_ method
+    :return: None
+    """
+    for feature, importance in sorted(
+            zip(vectorizer.get_feature_names(), model.feature_importances_),
+            key=lambda x: x[1],
+            reverse=False):
+        print("{}: {}".format(feature, importance))
