@@ -5,6 +5,7 @@ import numpy as np
 from columnar import columnar
 import matplotlib.pyplot as plt
 from nltk.corpus import stopwords
+from urlextract import URLExtract
 
 from globals import PUNCTUATION
 
@@ -36,11 +37,17 @@ def get_data_from_files(path_to_files):
 
 def preprocess_texts(texts, remove_stopwords=False):
     # TODO: Consider using lemmatization here?
-    # TODO: Perhaps identify and remove URLs beforehand? But they might aid in identifying spam... Replace URLs with
-    #     some keyword like URL?
-    #     Can also make it so that it identifies the URL of the video itself (for timestamp) versus URL of other video
+    # TODO: Can identify the URL of the video itself (when scraping) versus URL of other video
+    extractor = URLExtract()
     preprocessed_texts = []
     for text in texts:
+        urls_in_text = extractor.find_urls(text)
+        for url in urls_in_text:
+            text = text.replace(url, 'URL')
+        # try:
+        #     text = re.sub(globals.URL_REGEX, 'URL', text)
+        # except re.error:
+        #     continue
         text = ''.join([c for c in text if c not in PUNCTUATION])
         text = re.sub('\\s+', ' ', text)
         text = text.lower()
