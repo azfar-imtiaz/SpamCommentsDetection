@@ -8,6 +8,7 @@ from nltk.corpus import stopwords
 from urlextract import URLExtract
 
 from globals import PUNCTUATION
+from scrape_youtube_comments import YouTubeCommentExtractor
 
 
 def read_data_from_file(filename):
@@ -48,6 +49,11 @@ def preprocess_texts(texts, remove_stopwords=False):
         #     text = re.sub(globals.URL_REGEX, 'URL', text)
         # except re.error:
         #     continue
+        text = re.sub('<.+?>', '', text)
+        text = text.replace('&#39;', '')
+        text = text.replace('&quot;', '')
+        text = text.replace('&gt;', '')
+        text = text.replace('&amp;', '')
         text = ''.join([c for c in text if c not in PUNCTUATION])
         text = re.sub('\\s+', ' ', text)
         text = text.lower()
@@ -98,7 +104,6 @@ def get_feature_importances(vectorizer, model):
         We get feature importances here from the vectorizer and model.
         We observed better features using Tfidf instead of Count Vectorizer.
         The word 'subscribe' has the highest feature importance score, as we'd predicted.
-
     :param vectorizer: This is a text vectorizer
     :param model: This can be any model that has the feature_importances_ method
     :return: None
@@ -108,3 +113,20 @@ def get_feature_importances(vectorizer, model):
             key=lambda x: x[1],
             reverse=False):
         print("{}: {}".format(feature, importance))
+
+
+def scrape_comments_from_youtube_video(url, filename):
+    """
+        Scrape YouTube comments from a video using YouTube API, and write them to a CSV file.
+    :param url: The link to the video to scrape comments from
+    :param filename: The name of the CSV file to write the comments to
+    :return: None
+    """
+    headers = ['COMMENT_ID', 'AUTHOR', 'DATE', 'CONTENT', 'CLASS']
+    comment_extractor = YouTubeCommentExtractor()
+    video_comments = comment_extractor.get_comments_from_youtube_video(url=url, num_pages=50)
+    with open(filename, 'w') as wfile:
+        writer = csv.writer(wfile)
+        writer.writerow(headers)
+        for comment in video_comments:
+            writer.writerow([comment['comment_id'], comment['author'], comment['date'], comment['comment_text'], '-1'])

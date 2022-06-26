@@ -1,10 +1,11 @@
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-
-import urllib.parse as p
 import os
 import pickle
+import urllib.parse as p
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
+from google_auth_oauthlib.flow import InstalledAppFlow
+
+from globals import PATH_TO_CREDENTIALS_FILE
 
 
 class YouTubeCommentExtractor:
@@ -13,14 +14,20 @@ class YouTubeCommentExtractor:
         Link: https://www.thepythoncode.com/code/using-youtube-api-in-python
     """
     def __init__(self):
+        """
+            Constructor for YouTubeCommentExtractor class.
+        """
         self.api_service_name = "youtube"
         self.api_version = "v3"
-        self.client_secrets_file = "credentials.json"
+        self.client_secrets_file = PATH_TO_CREDENTIALS_FILE
         self.token_file_name = "token.pickle"
         self.SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
         self.youtube = self.__youtube_authenticate()
 
     def __youtube_authenticate(self):
+        """
+            YouTube authentication function. Requires credentials.json from YouTube Console API.
+        """
         os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
         creds = None
         # the file token.pickle stores the user's access and refresh tokens, and is
@@ -49,7 +56,7 @@ class YouTubeCommentExtractor:
         # split URL parts
         parsed_url = p.urlparse(url)
         # get the video ID by parsing the query of the URL
-        video_id = p.parse_qs(parsed_url.query).get("v")
+        video_id = p.parse_qs(parsed_url.query).get('v')
         if video_id:
             return video_id[0]
         else:
@@ -78,7 +85,7 @@ class YouTubeCommentExtractor:
 
     def get_comments_from_youtube_video(self, url, num_pages=50):
         # URL can be a video, to extract comments
-        if "watch" in url:
+        if 'watch' in url:
             # that's a video
             video_id = self.get_video_id_by_url(url)
             params = {
@@ -91,33 +98,32 @@ class YouTubeCommentExtractor:
 
         video_comments = []
         # get the first num_pages (num_pages API requests)
-        for i in range(num_pages):
+        print("Scraping comments...")
+        for index in range(num_pages):
+            print("\tCurrent page: {}".format(index + 1))
             # make API call to get all comments from the channel (including posts & videos)
             response = self.__get_comments(**params)
-            items = response.get("items")
+            items = response.get('items')
             # if items is empty, break out of the loop
             if not items:
                 break
             for item in items:
-                comment = item["snippet"]["topLevelComment"]["snippet"]["textDisplay"]
-                updated_at = item["snippet"]["topLevelComment"]["snippet"]["updatedAt"]
-                like_count = item["snippet"]["topLevelComment"]["snippet"]["likeCount"]
-                comment_id = item["snippet"]["topLevelComment"]["id"]
+                comment_text = item['snippet']['topLevelComment']['snippet']['textDisplay']
+                # updated_at = item['snippet']['topLevelComment']['snippet']['updatedAt']
+                # like_count = item['snippet']['topLevelComment']['snippet']['likeCount']
+                comment_id = item["snippet"]["topLevelComment"]['id']
+                author_name = item['snippet']['topLevelComment']['snippet']['authorDisplayName']
+                comment_date = item['snippet']['topLevelComment']['snippet']['publishedAt']
                 video_comments.append({
-                    'comment_text': comment,
-                    'updated_at': updated_at,
-                    'like_count': like_count,
-                    'comment_id': comment_id
+                    'comment_text': comment_text,
+                    'comment_id': comment_id,
+                    'author': author_name,
+                    'date': comment_date
                 })
-            if "nextPageToken" in response:
+            if 'nextPageToken' in response:
                 # if there is a next page, add next page token to the params we pass to the function
-                params["pageToken"] = response["nextPageToken"]
+                params['pageToken'] = response['nextPageToken']
             else:
                 # must be end of comments
                 break
         return video_comments
-
-
-# authenticate to YouTube API
-comment_extractor = YouTubeCommentExtractor()
-comments = comment_extractor.get_comments_from_youtube_video(url="https://www.youtube.com/watch?v=Aqv5TYQTFYM")

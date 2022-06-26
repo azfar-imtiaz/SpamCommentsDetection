@@ -1,3 +1,5 @@
+import joblib
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import classification_report
@@ -5,6 +7,24 @@ from sklearn.ensemble import RandomForestClassifier
 
 import globals
 from utils import *
+
+
+def get_predictions():
+    vectorizer = joblib.load('tfidf_vectorizer.pkl')
+    clf = joblib.load('comment_classifier.pkl')
+    filename = "YouTube06-JohnCena.csv"
+    data = read_data_from_file(filename)
+    data = [a['comment'] for a in data[1:]]
+    data = preprocess_texts(data, remove_stopwords=False)
+    vectors = vectorizer.transform(data)
+    predictions = clf.predict_proba(vectors)
+    for index, elem in enumerate(data):
+        if index == 0:
+            continue
+        max_prediction = np.max(predictions[index])
+        index_max_prediction = np.argmax(predictions[index])
+        if index_max_prediction == 1 or max_prediction < 0.9:
+            print("{}: {}".format(elem, max_prediction))
 
 
 if __name__ == '__main__':
@@ -33,3 +53,8 @@ if __name__ == '__main__':
     print_incorrect_predictions(X_test, y_test, predictions)
 
     get_feature_importances(vectorizer=vectorizer, model=clf)
+
+    joblib.dump(vectorizer, 'tfidf_vectorizer.pkl')
+    joblib.dump(clf, "comment_classifier.pkl")
+
+    # get_predictions()
